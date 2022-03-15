@@ -1,66 +1,42 @@
-const bizSdk = require('facebook-nodejs-business-sdk');
+//const bizSdk = require('facebook-nodejs-business-sdk');
+const axios = require('axios');
+const moment = require('moment');
+const { PromiseHandler } = require('../helper');
 
-const PageviewController = (req, res) => {
-    const token = "EAAFzVMai9U4BAD3FxqeNk2lsV7rCRMQmV1I9OUWZCZALkLoD1ZAHC6EjvBZCZCBKEMK7O3DpHstJRNlJsB5IQRxfPquEtFYcANhhxa4WZCdCjUAPaizymWf2bcZBpKQNFKblqCb4Ca9y29CRZCSNG4yPxsPMaQS9GSC4sC4ZBRKZBu8t9Mp4tkZBs7W";
+const PageviewController = PromiseHandler(async (req, res, next) => {
+    const token = "EAAFzVMai9U4BAPXO0TEroDxPadOCYCMnjNZC02QLNkqTPZBrepRZCfd59nj6k6JHw39m4gI3CDe8CmpPMOMoZBf5NUccfEitQ4065CmfE8BkxMjcBZAJ1quz7wFGHZBvZAncCpmtEnSZBG3cTEsdHLKLZA5VZAZBU5Pl76cvb2eFbQ2bX2lql9ECUuzzoDX2FI6pZCMZD";
     const pixel = "447222056213334";
+    const version = "v13.0";
 
+    let UriEvent = `https://graph.facebook.com/${version}/${pixel}/events?access_token=${token}`;
 
-    const Content = bizSdk.Content;
-    const CustomData = bizSdk.CustomData;
-    const DeliveryCategory = bizSdk.DeliveryCategory;
-    const EventRequest = bizSdk.EventRequest;
-    const UserData = bizSdk.UserData;
-    const ServerEvent = bizSdk.ServerEvent;
+    console.log(UriEvent);
 
-    const access_token = token;
-    const pixel_id = pixel;
-    const api = bizSdk.FacebookAdsApi.init(access_token);
+    let myStartDate = moment().subtract(1, 'm').format();
 
-    let current_timestamp = Math.floor(new Date() / 1000);
+    const params = {
+        "data": [
+            {
+                "event_name": "ViewContent",
+                "event_time": myStartDate,
+                "event_id": "event.id.123",
+                "event_source_url": "https://comprapindev.tk",
+                "user_data": { "client_ip_address": "186.119.104.71", "client_user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36" }
+            }
+        ]
+    }
 
-    const userData = (new UserData())
-        .setEmails(['joe@eg.com'])
-        .setPhones(['12345678901', '14251234567'])
-        // It is recommended to send Client IP and User Agent for Conversions API Events.
-        .setClientIpAddress(req.connection.remoteAddress)
-        .setClientUserAgent(req.headers['user-agent'])
-        .setFbp('fb.1.1558571054389.1098115397')
-        .setFbc('fb.1.1554763741205.AbCdEfGhIjKlMnOpQrStUvWxYz1234567890');
+    console.log(params);
 
-    const content = (new Content())
-        .setId('TEST67022')
-        .setQuantity(1)
-        .setDeliveryCategory(DeliveryCategory.HOME_DELIVERY);
+    try {
+        const { data, status } = await axios.post(UriEvent, params);
+        console.log("data", data, status);
+        res.json(data);
+    } catch (error) {
+        console.log("", error);
+        res.json({error: error});
+    }
 
-    const customData = (new CustomData())
-        .setContents([content])
-        .setCurrency('usd')
-        .setValue(123.45);
-
-        console.log(customData);
-
-    const serverEvent = (new ServerEvent())
-        .setEventName('test_event_code')
-        .setEventTime(current_timestamp)
-        .setUserData(userData)
-        .setCustomData({test_event_code: 'TEST67022'})
-        .setEventSourceUrl('http://jaspers-market.com/product/123')
-        .setActionSource('website');
-
-    const eventsData = [serverEvent];
-    const eventRequest = (new EventRequest(access_token, pixel_id))
-        .setEvents(eventsData);
-
-
-    eventRequest.execute().then(
-        response => {
-            res.json(response);
-        },
-        err => {
-            res.json(err);
-        }
-    );
-    
-};
+});
 
 module.exports = PageviewController;
